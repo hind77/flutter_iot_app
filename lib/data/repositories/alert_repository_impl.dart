@@ -27,4 +27,9 @@ class AlertRepositoryImpl implements AlertRepository {
   Future<void> dismissAlert(String id) async {
     await _sqliteHelper.deleteAlert(id);
   }
+
+  @override
+  Future<void> deleteAllAlerts() async {
+    await _sqliteHelper.deleteAllAlerts();
+  }
 }

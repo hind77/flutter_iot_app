@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 import '../../domain/entities/alert_entity.dart';
+import '../../domain/entities/sensor_data.dart';
 import '../providers/providers.dart';
+import 'sensor_detail_screen.dart';
 
 class AlertCenterScreen extends ConsumerWidget {
   const AlertCenterScreen({super.key});
@@ -17,8 +19,8 @@ class AlertCenterScreen extends ConsumerWidget {
         title: const Text('Alert Center'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.tune_rounded),
-            onPressed: () {},
+            icon: const Icon(Icons.delete_sweep_rounded, color: AppColors.criticalRed),
+            onPressed: () => ref.read(alertProvider.notifier).clearAllAlerts(),
           ),
           const SizedBox(width: 8),
         ],
@@ -33,7 +35,7 @@ class AlertCenterScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(24),
             children: [
               if (criticalCount > 0)
-                _buildCriticalBanner(context, criticalCount),
+                _buildCriticalBanner(context, activeAlerts),
               if (criticalCount > 0)
                 const SizedBox(height: 32),
               
@@ -63,12 +65,12 @@ class AlertCenterScreen extends ConsumerWidget {
               ...activeAlerts.map((alert) => _buildAlertItem(context, alert, ref)).toList(),
               
               if (activeAlerts.isEmpty)
-                Center(
+                const Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(32.0),
+                    padding: EdgeInsets.all(32.0),
                     child: Text(
                       'No active alerts',
-                      style: Theme.of(context).textTheme.bodyMedium,
+                      style: TextStyle(color: AppColors.textSecondary),
                     ),
                   ),
                 ),
@@ -81,7 +83,10 @@ class AlertCenterScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCriticalBanner(BuildContext context, int count) {
+  Widget _buildCriticalBanner(BuildContext context, List<AlertEntity> activeAlerts) {
+    final criticalAlerts = activeAlerts.where((a) => a.severity == AlertSeverity.critical).toList();
+    final count = criticalAlerts.length;
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -114,9 +119,9 @@ class AlertCenterScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      'Immediate action required for Kitchen sensor',
-                      style: Theme.of(context).textTheme.bodyMedium,
+                    const Text(
+                      'Immediate action required for monitored sensors',
+                      style: TextStyle(color: AppColors.textSecondary),
                     ),
                   ],
                 ),
@@ -127,7 +132,15 @@ class AlertCenterScreen extends ConsumerWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                final lastSensor = criticalAlerts.first.sensorType ?? SensorType.temperature;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SensorDetailScreen(sensorType: lastSensor),
+                  ),
+                );
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.criticalRed,
                 foregroundColor: Colors.white,
@@ -151,24 +164,42 @@ class AlertCenterScreen extends ConsumerWidget {
     IconData icon;
     Color iconBgColor;
     
+    if (alert.sensorType != null) {
+      switch (alert.sensorType!) {
+        case SensorType.temperature:
+          icon = Icons.thermostat_rounded;
+          iconBgColor = AppColors.criticalRed.withOpacity(0.2);
+          break;
+        case SensorType.humidity:
+          icon = Icons.water_drop_rounded;
+          iconBgColor = AppColors.warningOrange.withOpacity(0.2);
+          break;
+        case SensorType.pressure:
+          icon = Icons.compress_rounded;
+          iconBgColor = AppColors.accentCyan.withOpacity(0.2);
+          break;
+        case SensorType.motion:
+          icon = Icons.motion_photos_on_rounded;
+          iconBgColor = AppColors.accentPurple.withOpacity(0.2);
+          break;
+      }
+    } else {
+      icon = Icons.notifications_active_rounded;
+      iconBgColor = AppColors.systemGray.withOpacity(0.2);
+    }
+    
     switch (alert.severity) {
       case AlertSeverity.critical:
         severityColor = AppColors.criticalRed;
         badgeText = 'CRITICAL';
-        icon = Icons.thermostat_rounded;
-        iconBgColor = AppColors.criticalRed.withOpacity(0.2);
         break;
       case AlertSeverity.warning:
         severityColor = AppColors.warningOrange;
         badgeText = 'WARNING';
-        icon = Icons.water_drop_rounded;
-        iconBgColor = AppColors.warningOrange.withOpacity(0.2);
         break;
       case AlertSeverity.system:
         severityColor = AppColors.systemGray;
         badgeText = 'SYSTEM';
-        icon = Icons.battery_alert_rounded;
-        iconBgColor = AppColors.systemGray.withOpacity(0.2);
         break;
     }
 
@@ -241,7 +272,7 @@ class AlertCenterScreen extends ConsumerWidget {
               if (alert.severity == AlertSeverity.critical)
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () => ref.read(alertProvider.notifier).resolveAlert(alert.id),
+                    onPressed: () => _showResolutionDialog(context, ref, alert),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.accentPurple,
                       foregroundColor: Colors.white,
@@ -293,6 +324,69 @@ class AlertCenterScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _showResolutionDialog(BuildContext context, WidgetRef ref, AlertEntity alert) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBackground,
+        title: Text('Resolve ${alert.title}', style: const TextStyle(color: Colors.white)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(alert.description, style: const TextStyle(color: AppColors.textSecondary)),
+            const SizedBox(height: 24),
+            const Text('Suggested Action:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+            const SizedBox(height: 12),
+            if (alert.sensorType == SensorType.temperature) 
+              _buildActionTile(context, ref, 'Turn on cooling system', Icons.ac_unit, 'ac_unit'),
+            if (alert.sensorType == SensorType.humidity)
+              _buildActionTile(context, ref, 'Activate Dehumidifier', Icons.air, 'kitchen_fan'),
+            if (alert.sensorType == SensorType.motion)
+              _buildActionTile(context, ref, 'Activate Security Lights', Icons.lightbulb, 'living_room_light'),
+            if (alert.sensorType == SensorType.pressure)
+              _buildActionTile(context, ref, 'Open Ventilation Damper', Icons.wind_power, 'pressure_valve'),
+            
+            // Helpful text if it's an old alert or system alert
+            if (alert.sensorType == null)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: Text('• Check sensor battery\n• Verify MQTT broker connection\n• Recalibrate sensor node', 
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              ref.read(alertProvider.notifier).resolveAlert(alert.id);
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.healthyGreen),
+            child: const Text('Mark as Resolved'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionTile(BuildContext context, WidgetRef ref, String label, IconData icon, String actuatorId) {
+    final status = ref.watch(actuatorProvider)[actuatorId] ?? false;
+    return ListTile(
+      leading: Icon(icon, color: AppColors.accentCyan),
+      title: Text(label, style: const TextStyle(color: Colors.white, fontSize: 14)),
+      trailing: Switch(
+        value: status,
+        onChanged: (val) => ref.read(actuatorProvider.notifier).toggle(actuatorId),
+      ),
+      contentPadding: EdgeInsets.zero,
     );
   }
 }

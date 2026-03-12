@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
+import '../../domain/entities/sensor_data.dart';
+import '../../domain/entities/threshold_entity.dart';
 import '../providers/providers.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {

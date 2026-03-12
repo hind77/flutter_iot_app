@@ -145,68 +145,88 @@ class _SensorDetailScreenState extends ConsumerState<SensorDetailScreen> {
             const SizedBox(height: 32),
             
             // Threshold Settings
-            builder: (context) {
-              final thresholds = ref.watch(thresholdProvider);
-              final threshold = thresholds[widget.sensorType]!;
-              final unit = data.unit;
+            Builder(
+              builder: (context) {
+                final thresholds = ref.watch(thresholdProvider);
+                final threshold = thresholds[widget.sensorType]!;
+                final unit = data.unit;
 
-              return Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.cardBorder),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.notifications_active, color: AppColors.accentCyan),
-                        const SizedBox(width: 12),
-                        Text('Threshold Settings', style: Theme.of(context).textTheme.titleLarge),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    
-                    if (widget.sensorType != SensorType.motion) ...[
-                      _buildSliderRow('Max Alert Limit', threshold.max ?? 100, 0, 100, unit, (val) {
-                        ref.read(thresholdProvider.notifier).updateThreshold(widget.sensorType, threshold.min, val);
-                      }),
+                return Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardBackground,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.cardBorder),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.notifications_active, color: AppColors.accentCyan),
+                          const SizedBox(width: 12),
+                          Text('Threshold Settings', style: Theme.of(context).textTheme.titleLarge),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
                       
-                      const SizedBox(height: 16),
+                      if (widget.sensorType != SensorType.motion) ...[
+                        () {
+                          double minRange = 0;
+                          double maxRange = 100;
+                          
+                          // Custom ranges per sensor type logic
+                          if (widget.sensorType == SensorType.pressure) {
+                            minRange = 900;
+                            maxRange = 1100;
+                          } else if (widget.sensorType == SensorType.temperature) {
+                            minRange = -20;
+                            maxRange = 60;
+                          }
+
+                          return Column(
+                            children: [
+                              _buildSliderRow('Max Alert Limit', threshold.max ?? maxRange, minRange, maxRange, unit, (val) {
+                                ref.read(thresholdProvider.notifier).updateThreshold(widget.sensorType, threshold.min, val);
+                              }),
+                              
+                              const SizedBox(height: 16),
+                              
+                              _buildSliderRow('Min Alert Limit', threshold.min ?? minRange, minRange, maxRange, unit, (val) {
+                                ref.read(thresholdProvider.notifier).updateThreshold(widget.sensorType, val, threshold.max);
+                              }),
+                            ],
+                          );
+                        }(),
+                      ] else
+                        const Text('Alerts are triggered on any motion detection.', style: TextStyle(color: AppColors.textSecondary)),
                       
-                      _buildSliderRow('Min Alert Limit', threshold.min ?? 0, 0, 100, unit, (val) {
-                        ref.read(thresholdProvider.notifier).updateThreshold(widget.sensorType, val, threshold.max);
-                      }),
-                    ] else
-                      const Text('Alerts are triggered on any motion detection.', style: TextStyle(color: AppColors.textSecondary)),
-                    
-                    const Divider(height: 32, color: AppColors.cardBorder),
-                    
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Smart Notifications', style: Theme.of(context).textTheme.titleMedium),
-                            const SizedBox(height: 4),
-                            Text('Alert if threshold is crossed', style: Theme.of(context).textTheme.bodySmall),
-                          ],
-                        ),
-                        Switch(
-                          value: threshold.isEnabled,
-                          onChanged: (val) {
-                            ref.read(thresholdProvider.notifier).toggleThreshold(widget.sensorType, val);
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            },
+                      const Divider(height: 32, color: AppColors.cardBorder),
+                      
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Smart Notifications', style: Theme.of(context).textTheme.titleMedium),
+                              const SizedBox(height: 4),
+                              Text('Alert if threshold is crossed', style: Theme.of(context).textTheme.bodySmall),
+                            ],
+                          ),
+                          Switch(
+                            value: threshold.isEnabled,
+                            onChanged: (val) {
+                              ref.read(thresholdProvider.notifier).toggleThreshold(widget.sensorType, val);
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ),

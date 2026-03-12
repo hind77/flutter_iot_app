@@ -3,7 +3,7 @@ import 'package:path/path.dart';
 
 class SqliteHelper {
   static const _databaseName = "IotAlerts.db";
-  static const _databaseVersion = 1;
+  static const _databaseVersion = 2; // Incremented for migration
 
   static const tableAlerts = 'alerts';
 
@@ -13,6 +13,7 @@ class SqliteHelper {
   static const columnSeverity = 'severity';
   static const columnTimestamp = 'timestamp';
   static const columnIsResolved = 'isResolved';
+  static const columnSensorType = 'sensorType'; // New column
 
   Database? _database;
 
@@ -28,6 +29,7 @@ class SqliteHelper {
       path,
       version: _databaseVersion,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -39,9 +41,16 @@ class SqliteHelper {
             $columnDescription TEXT NOT NULL,
             $columnSeverity INTEGER NOT NULL,
             $columnTimestamp TEXT NOT NULL,
-            $columnIsResolved INTEGER NOT NULL
+            $columnIsResolved INTEGER NOT NULL,
+            $columnSensorType INTEGER
           )
           ''');
+  }
+
+  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE $tableAlerts ADD COLUMN $columnSensorType INTEGER');
+    }
   }
 
   Future<void> insertAlert(Map<String, dynamic> row) async {
@@ -71,5 +80,10 @@ class SqliteHelper {
       where: '$columnId = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<void> deleteAllAlerts() async {
+    Database db = await database;
+    await db.delete(tableAlerts);
   }
 }

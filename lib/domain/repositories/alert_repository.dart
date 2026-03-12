@@ -5,4 +5,5 @@ abstract class AlertRepository {
   Future<void> saveAlert(AlertEntity alert);
   Future<void> resolveAlert(String id);
   Future<void> dismissAlert(String id);
+  Future<void> deleteAllAlerts();
 }

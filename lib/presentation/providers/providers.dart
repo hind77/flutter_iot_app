@@ -119,6 +119,11 @@ class AlertNotifier extends StateNotifier<AsyncValue<List<AlertEntity>>> {
     await _repository.dismissAlert(id);
     await loadAlerts();
   }
+
+  Future<void> clearAllAlerts() async {
+    await _repository.deleteAllAlerts();
+    await loadAlerts();
+  }
   
   // Dummy data generator for UI
   Future<void> loadDummyData() async {
@@ -200,6 +205,7 @@ class AlertNotifier extends StateNotifier<AsyncValue<List<AlertEntity>>> {
       description: desc,
       severity: severity,
       timestamp: DateTime.now(),
+      sensorType: sensorType,
     );
 
     await _repository.saveAlert(newAlert);
@@ -348,15 +354,34 @@ final dummySensorProvider = Provider<Map<SensorType, SensorData>>((ref) {
   };
 });
 
-// Provide live data with dummy fallback
+// Provide live data with dummy fallback and dynamic threshold status
 final liveSensorProvider = Provider<Map<SensorType, SensorData>>((ref) {
   final realData = ref.watch(sensorDataStreamProvider).value ?? {};
   final dummyData = ref.watch(dummySensorProvider);
+  final thresholds = ref.watch(thresholdProvider);
   
   // Merge real data over dummy data to ensure all keys exist
   final Map<SensorType, SensorData> merged = Map.from(dummyData);
   merged.addAll(realData);
-  return merged;
+
+  // Apply dynamic status based on current thresholds
+  final Map<SensorType, SensorData> finalized = {};
+  merged.forEach((type, data) {
+    var status = SensorStatus.normal;
+    final threshold = thresholds[type];
+
+    if (threshold != null && threshold.isEnabled) {
+      if (threshold.max != null && data.value > threshold.max!) {
+        status = SensorStatus.critical;
+      } else if (threshold.min != null && data.value < threshold.min!) {
+        status = SensorStatus.warning;
+      }
+    }
+    
+    finalized[type] = data.copyWith(status: status);
+  });
+
+  return finalized;
 });
 
 // Automation State Management

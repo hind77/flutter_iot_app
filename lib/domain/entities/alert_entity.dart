@@ -1,3 +1,5 @@
+import 'sensor_data.dart';
+
 enum AlertSeverity { critical, warning, system }
 
 class AlertEntity {
@@ -7,6 +9,7 @@ class AlertEntity {
   final AlertSeverity severity;
   final DateTime timestamp;
   final bool isResolved;
+  final SensorType? sensorType;
 
   const AlertEntity({
     required this.id,
@@ -15,6 +18,7 @@ class AlertEntity {
     required this.severity,
     required this.timestamp,
     this.isResolved = false,
+    this.sensorType,
   });
 
   AlertEntity copyWith({
@@ -24,6 +28,7 @@ class AlertEntity {
     AlertSeverity? severity,
     DateTime? timestamp,
     bool? isResolved,
+    SensorType? sensorType,
   }) {
     return AlertEntity(
       id: id ?? this.id,
@@ -32,6 +37,7 @@ class AlertEntity {
       severity: severity ?? this.severity,
       timestamp: timestamp ?? this.timestamp,
       isResolved: isResolved ?? this.isResolved,
+      sensorType: sensorType ?? this.sensorType,
     );
   }
 
@@ -43,6 +49,7 @@ class AlertEntity {
       'severity': severity.index,
       'timestamp': timestamp.toIso8601String(),
       'isResolved': isResolved ? 1 : 0,
+      'sensorType': sensorType?.index,
     };
   }
 
@@ -54,6 +61,7 @@ class AlertEntity {
       severity: AlertSeverity.values[map['severity'] as int],
       timestamp: DateTime.parse(map['timestamp'] as String),
       isResolved: (map['isResolved'] as int) == 1,
+      sensorType: map['sensorType'] != null ? SensorType.values[map['sensorType'] as int] : null,
     );
   }
 }
