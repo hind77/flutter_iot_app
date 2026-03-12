@@ -168,6 +168,28 @@ class DashboardScreen extends ConsumerWidget {
             
             const SizedBox(height: 32),
             
+            // Quick Actions / Actuators
+            Text(
+              'Quick Actions',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 120,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  _buildActuatorCard(ref, 'living_room_light', 'Light', Icons.lightbulb_outline),
+                  const SizedBox(width: 16),
+                  _buildActuatorCard(ref, 'kitchen_fan', 'Fan', Icons.air),
+                  const SizedBox(width: 16),
+                  _buildActuatorCard(ref, 'ac_unit', 'AC Unit', Icons.ac_unit),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 32),
+            
             // Recent Activity
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -244,6 +266,42 @@ class DashboardScreen extends ConsumerWidget {
           const SizedBox(width: 8),
           Text(text, style: Theme.of(context).textTheme.bodySmall),
         ],
+      ),
+    );
+  }
+
+  Widget _buildActuatorCard(WidgetRef ref, String id, String label, IconData icon) {
+    final status = ref.watch(actuatorProvider)[id] ?? false;
+    
+    return GestureDetector(
+      onTap: () => ref.read(actuatorProvider.notifier).toggle(id),
+      child: Container(
+        width: 100,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: status ? AppColors.accentCyan : AppColors.cardBackground,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.cardBorder),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon, 
+              color: status ? AppColors.background : AppColors.textSecondary,
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label, 
+              style: TextStyle(
+                color: status ? AppColors.background : Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

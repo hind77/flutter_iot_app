@@ -21,6 +21,11 @@ class SensorRepositoryImpl implements SensorRepository {
   }
 
   @override
+  Future<void> sendCommand(String topic, String command) async {
+    _mqttService.publish(topic, command);
+  }
+
+  @override
   Future<void> updateThreshold(SensorType type, double min, double max) async {
     // In a real app, this might send an MQTT message back to the broker to update device thresholds
     // or just store locally so the app logic uses them.

@@ -137,6 +137,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 32),
             const Divider(color: AppColors.cardBorder),
             const SizedBox(height: 32),
+
+            // Smart Thresholds Section
+            Row(
+              children: [
+                const Icon(Icons.security_rounded, color: AppColors.accentCyan),
+                const SizedBox(width: 8),
+                Text('Smart Thresholds', style: Theme.of(context).textTheme.titleLarge),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text('Set limits to trigger automatic alerts', style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 24),
+            
+            // Generate cards for each sensor type
+            ...SensorType.values.map((type) {
+              final threshold = ref.watch(thresholdProvider)[type]!;
+              return _buildThresholdCard(type, threshold);
+            }),
+            
+            const SizedBox(height: 32),
+            const Divider(color: AppColors.cardBorder),
+            const SizedBox(height: 32),
             
             // Devices Section
             Row(
@@ -192,11 +214,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             const SizedBox(height: 16),
             
-            // Sign Out Button
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
-                onPressed: () {},
+                onPressed: () => ref.read(authProvider.notifier).logout(),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.criticalRed,
                   side: const BorderSide(color: AppColors.criticalRed),
@@ -273,6 +294,100 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
+    );
+  }
+
+  Widget _buildThresholdCard(SensorType type, ThresholdEntity threshold) {
+    String label = type.name[0].toUpperCase() + type.name.substring(1);
+    String unit = "";
+    switch(type) {
+      case SensorType.temperature: unit = "°C"; break;
+      case SensorType.humidity: unit = "%"; break;
+      case SensorType.pressure: unit = "hPa"; break;
+      default: unit = "";
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(label, style: Theme.of(context).textTheme.titleMedium),
+              Switch(
+                value: threshold.isEnabled, 
+                onChanged: (val) {
+                  ref.read(thresholdProvider.notifier).toggleThreshold(type, val);
+                },
+                activeColor: AppColors.accentCyan,
+              ),
+            ],
+          ),
+          if (type != SensorType.motion) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSmallThresholdInput(
+                    'Min', 
+                    threshold.min?.toString() ?? '0',
+                    (val) => ref.read(thresholdProvider.notifier).updateThreshold(
+                      type, double.tryParse(val), threshold.max
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildSmallThresholdInput(
+                    'Max', 
+                    threshold.max?.toString() ?? '100',
+                    (val) => ref.read(thresholdProvider.notifier).updateThreshold(
+                      type, threshold.min, double.tryParse(val)
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(unit, style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ] else
+            Text('Alert triggered on any motion detection', style: Theme.of(context).textTheme.bodySmall),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSmallThresholdInput(String label, String value, Function(String) onSave) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+        const SizedBox(height: 4),
+        SizedBox(
+          height: 40,
+          child: TextField(
+            keyboardType: TextInputType.number,
+            style: const TextStyle(fontSize: 14, color: Colors.white),
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: value,
+              hintStyle: const TextStyle(color: AppColors.textSecondary),
+              fillColor: AppColors.background,
+              filled: true,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            ),
+            onSubmitted: onSave,
+          ),
+        ),
+      ],
     );
   }
 

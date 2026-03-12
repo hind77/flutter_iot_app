@@ -4,6 +4,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/screens/main_screen.dart';
+import 'presentation/screens/login_screen.dart';
+import 'presentation/providers/providers.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,15 +27,17 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authProvider);
+
     return MaterialApp(
       title: 'Flutter IoT App',
       theme: AppTheme.darkTheme,
-      home: const MainScreen(),
+      home: user == null ? const LoginScreen() : const MainScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

@@ -9,7 +9,20 @@ PORT = 1883
 TOPIC_PREFIX = "hind_iot_demo/001/sensors" # Changed to unique topic
 
 client = mqtt.Client()
-client.loop_start() # Start loop in background
+
+def on_connect(client, userdata, flags, rc):
+    print(f"Connected with result code {rc}")
+    # Subscribe to commands
+    cmd_topic = f"hind_iot_demo/001/commands/#"
+    client.subscribe(cmd_topic)
+    print(f"Subscribed to commands: {cmd_topic}")
+
+def on_message(client, userdata, msg):
+    print(f"ACTUATOR ACTION: {msg.topic} -> {msg.payload.decode()}")
+
+client.on_connect = on_connect
+client.on_message = on_message
+client.loop_start()
 
 def simulate_sensors():
     print(f"Connecting to {BROKER}...")

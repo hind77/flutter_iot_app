@@ -6,7 +6,10 @@ import '../../data/repositories/alert_repository_impl.dart';
 import '../../data/repositories/sensor_repository_impl.dart';
 import '../../domain/entities/sensor_data.dart';
 import '../../domain/entities/alert_entity.dart';
+import '../../domain/entities/threshold_entity.dart';
+import '../../domain/entities/automation_rule.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
 
 // Services
 final sqliteHelperProvider = Provider<SqliteHelper>((ref) => SqliteHelper());
@@ -73,8 +76,10 @@ final sensorDataStreamProvider = StreamProvider<Map<SensorType, SensorData>>((re
 // Alert State
 class AlertNotifier extends StateNotifier<AsyncValue<List<AlertEntity>>> {
   final AlertRepositoryImpl _repository;
+  final Ref _ref;
+  final Set<String> _recentAlertCooldown = {};
 
-  AlertNotifier(this._repository) : super(const AsyncValue.loading()) {
+  AlertNotifier(this._repository, this._ref) : super(const AsyncValue.loading()) {
     init();
   }
 
@@ -142,11 +147,168 @@ class AlertNotifier extends StateNotifier<AsyncValue<List<AlertEntity>>> {
     ];
     state = AsyncValue.data(dummyAlerts);
   }
+
+  // Monitor Incoming Data
+  void checkThresholds(Map<SensorType, SensorData> data) {
+    final thresholds = _ref.read(thresholdProvider);
+    
+    data.forEach((type, sensorData) {
+      final threshold = thresholds[type];
+      if (threshold == null || !threshold.isEnabled) return;
+
+      bool isViolated = false;
+      String message = "";
+      AlertSeverity severity = AlertSeverity.warning;
+
+      if (threshold.max != null && sensorData.value > threshold.max!) {
+        isViolated = true;
+        message = "${sensorData.type.name.toUpperCase()} exceeded ${threshold.max}${sensorData.unit}";
+        severity = AlertSeverity.critical;
+      } else if (threshold.min != null && sensorData.value < threshold.min!) {
+        isViolated = true;
+        message = "${sensorData.type.name.toUpperCase()} dropped below ${threshold.min}${sensorData.unit}";
+        severity = AlertSeverity.warning;
+      }
+
+      if (isViolated) {
+        _triggerAlert(
+          title: "High/Low ${sensorData.type.name}",
+          desc: message,
+          severity: severity,
+          sensorType: type,
+        );
+      }
+    });
+  }
+
+  Future<void> _triggerAlert({
+    required String title,
+    required String desc,
+    required AlertSeverity severity,
+    required SensorType sensorType,
+  }) async {
+    // Basic cooldown to prevent alert spam (1 alert per sensor every 30 seconds)
+    final cooldownKey = "${sensorType.name}_${severity.name}";
+    if (_recentAlertCooldown.contains(cooldownKey)) return;
+    
+    _recentAlertCooldown.add(cooldownKey);
+    Timer(const Duration(seconds: 30), () => _recentAlertCooldown.remove(cooldownKey));
+
+    final newAlert = AlertEntity(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: title,
+      description: desc,
+      severity: severity,
+      timestamp: DateTime.now(),
+    );
+
+    await _repository.saveAlert(newAlert);
+    await loadAlerts();
+    
+    debugPrint("🔥 SMART ALERT TRIGGERED: $title - $desc");
+  }
 }
 
 final alertProvider = StateNotifierProvider<AlertNotifier, AsyncValue<List<AlertEntity>>>((ref) {
-  return AlertNotifier(ref.watch(alertRepositoryProvider));
+  final notifier = AlertNotifier(ref.watch(alertRepositoryProvider), ref);
+  
+  // Watch sensor data and check against thresholds
+  ref.listen(sensorDataStreamProvider, (previous, next) {
+    if (next.hasValue) {
+      notifier.checkThresholds(next.value!);
+    }
+  });
+  
+  return notifier;
 });
+
+// Threshold State Management
+class ThresholdNotifier extends StateNotifier<Map<SensorType, ThresholdEntity>> {
+  final Ref _ref;
+  
+  ThresholdNotifier(this._ref) : super(_defaultThresholds()) {
+    _loadThresholds();
+  }
+
+  static Map<SensorType, ThresholdEntity> _defaultThresholds() {
+    return {
+      SensorType.temperature: const ThresholdEntity(type: SensorType.temperature, min: 10, max: 28),
+      SensorType.humidity: const ThresholdEntity(type: SensorType.humidity, min: 20, max: 70),
+      SensorType.pressure: const ThresholdEntity(type: SensorType.pressure, min: 900, max: 1100),
+      SensorType.motion: const ThresholdEntity(type: SensorType.motion, max: 0.5), 
+    };
+  }
+
+  Future<void> _loadThresholds() async {
+    final prefs = await _ref.read(sharedPrefsProvider.future);
+    final Map<SensorType, ThresholdEntity> loaded = {};
+    
+    for (var type in SensorType.values) {
+      final keyMin = 'threshold_${type.name}_min';
+      final keyMax = 'threshold_${type.name}_max';
+      if (prefs.containsKey(keyMax)) {
+        loaded[type] = ThresholdEntity(
+          type: type,
+          min: prefs.getDouble(keyMin),
+          max: prefs.getDouble(keyMax),
+        );
+      }
+    }
+    
+    if (loaded.isNotEmpty) {
+      state = {...state, ...loaded};
+    }
+  }
+
+  Future<void> updateThreshold(SensorType type, double? min, double? max) async {
+    final prefs = await _ref.read(sharedPrefsProvider.future);
+    final newThreshold = state[type]!.copyWith(min: min, max: max);
+    
+    state = {...state, type: newThreshold};
+    
+    if (min != null) await prefs.setDouble('threshold_${type.name}_min', min);
+    if (max != null) await prefs.setDouble('threshold_${type.name}_max', max);
+  }
+
+  Future<void> toggleThreshold(SensorType type, bool isEnabled) async {
+    final prefs = await _ref.read(sharedPrefsProvider.future);
+    final newThreshold = state[type]!.copyWith(isEnabled: isEnabled);
+    state = {...state, type: newThreshold};
+    await prefs.setBool('threshold_${type.name}_enabled', isEnabled);
+  }
+}
+
+final thresholdProvider = StateNotifierProvider<ThresholdNotifier, Map<SensorType, ThresholdEntity>>((ref) {
+  return ThresholdNotifier(ref);
+});
+
+// Actuator State management
+final actuatorProvider = StateNotifierProvider<ActuatorNotifier, Map<String, bool>>((ref) {
+  return ActuatorNotifier(ref);
+});
+
+class ActuatorNotifier extends StateNotifier<Map<String, bool>> {
+  final Ref _ref;
+  ActuatorNotifier(this._ref) : super({
+    'living_room_light': false,
+    'kitchen_fan': false,
+    'ac_unit': true,
+  });
+
+  Future<void> toggle(String id) async {
+    final newValue = !state[id]!;
+    state = {...state, id: newValue};
+    
+    // Publish to MQTT
+    final repo = _ref.read(sensorRepositoryProvider);
+    final prefs = await _ref.read(sharedPrefsProvider.future);
+    final baseTopic = prefs.getString('mqtt_topic') ?? 'hind_iot_demo/001/sensors';
+    
+    // We'll use a 'commands' subtopic
+    final cmdTopic = baseTopic.replaceAll('sensors', 'commands/$id');
+    repo.sendCommand(cmdTopic, newValue ? 'ON' : 'OFF');
+  }
+}
 
 // Simulated current sensor data for UI when not connected (to match screenshots)
 final dummySensorProvider = Provider<Map<SensorType, SensorData>>((ref) {
@@ -196,3 +358,127 @@ final liveSensorProvider = Provider<Map<SensorType, SensorData>>((ref) {
   merged.addAll(realData);
   return merged;
 });
+
+// Automation State Management
+final automationProvider = StateNotifierProvider<AutomationNotifier, List<AutomationRule>>((ref) {
+  final notifier = AutomationNotifier(ref);
+  
+  // Connect the engine to the sensor stream
+  ref.listen(sensorDataStreamProvider, (previous, next) {
+    if (next.hasValue) {
+      notifier.processData(next.value!);
+    }
+  });
+  
+  return notifier;
+});
+
+class AutomationNotifier extends StateNotifier<List<AutomationRule>> {
+  final Ref _ref;
+  final Set<String> _triggerLock = {}; // Prevent flapping
+
+  AutomationNotifier(this._ref) : super([
+    AutomationRule(
+      id: '1',
+      name: 'Fan Auto-Cool',
+      triggerSensor: SensorType.temperature,
+      triggerValue: 27.0,
+      triggerAbove: true,
+      targetActuatorId: 'kitchen_fan',
+      actionOn: true,
+    ),
+    AutomationRule(
+      id: '2',
+      name: 'Night Light on Motion',
+      triggerSensor: SensorType.motion,
+      triggerValue: 0.5,
+      triggerAbove: true,
+      targetActuatorId: 'living_room_light',
+      actionOn: true,
+    ),
+  ]);
+
+  void processData(Map<SensorType, SensorData> data) {
+    for (var rule in state) {
+      if (!rule.isEnabled) continue;
+      
+      final sensorData = data[rule.triggerSensor];
+      if (sensorData == null) continue;
+
+      bool shouldTrigger = rule.triggerAbove 
+          ? sensorData.value > rule.triggerValue 
+          : sensorData.value < rule.triggerValue;
+
+      if (shouldTrigger) {
+        _executeRule(rule);
+      }
+    }
+  }
+
+  void _executeRule(AutomationRule rule) {
+    final lockKey = "${rule.id}_lock";
+    if (_triggerLock.contains(lockKey)) return;
+
+    // Apply lock for 1 minute to avoid spamming the toggle
+    _triggerLock.add(lockKey);
+    Timer(const Duration(minutes: 1), () => _triggerLock.remove(lockKey));
+
+    final currentStatus = _ref.read(actuatorProvider)[rule.targetActuatorId] ?? false;
+
+    // Only set if different from desired
+    if (currentStatus != rule.actionOn) {
+      _ref.read(actuatorProvider.notifier).toggle(rule.targetActuatorId);
+      debugPrint("🤖 AUTOMATION: Rule '${rule.name}' triggered!");
+    }
+  }
+
+  void toggleRule(String id) {
+    state = [
+      for (final rule in state)
+        if (rule.id == id) rule.copyWith(isEnabled: !rule.isEnabled) else rule,
+    ];
+  }
+}
+
+// Auth State Management
+class UserEntity {
+  final String email;
+  final String name;
+  UserEntity({required this.email, required this.name});
+}
+
+final authProvider = StateNotifierProvider<AuthNotifier, UserEntity?>((ref) {
+  return AuthNotifier(ref);
+});
+
+class AuthNotifier extends StateNotifier<UserEntity?> {
+  final Ref _ref;
+  AuthNotifier(this._ref) : super(null) {
+    _loadSession();
+  }
+
+  Future<void> _loadSession() async {
+    final prefs = await _ref.read(sharedPrefsProvider.future);
+    final email = prefs.getString('auth_email');
+    if (email != null) {
+      state = UserEntity(email: email, name: email.split('@')[0]);
+    }
+  }
+
+  Future<bool> login(String email, String password) async {
+    await Future.delayed(const Duration(seconds: 1));
+    if (email.isNotEmpty && password.length >= 6) {
+      state = UserEntity(email: email, name: email.split('@')[0]);
+      final prefs = await _ref.read(sharedPrefsProvider.future);
+      await prefs.setString('auth_email', email);
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> logout() async {
+    state = null;
+    final prefs = await _ref.read(sharedPrefsProvider.future);
+    await prefs.remove('auth_email');
+  }
+}

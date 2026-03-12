@@ -84,9 +84,9 @@ class _SensorDetailScreenState extends ConsumerState<SensorDetailScreen> {
                   const Icon(Icons.check_circle, color: AppColors.healthyGreen, size: 16),
                   const SizedBox(width: 8),
                   Text(
-                    'Status: Normal',
+                    'Status: ${data.status.name.toUpperCase()}',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.healthyGreen,
+                      color: data.status == SensorStatus.critical ? AppColors.criticalRed : AppColors.healthyGreen,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -134,70 +134,79 @@ class _SensorDetailScreenState extends ConsumerState<SensorDetailScreen> {
             // Stats Row
             Row(
               children: [
-                Expanded(child: _buildStatCard('Min', '21°C')),
+                Expanded(child: _buildStatCard('Min', '${data.history.isEmpty ? 0 : data.history.reduce((a, b) => a < b ? a : b).toStringAsFixed(1)}${data.unit}')),
                 const SizedBox(width: 16),
-                Expanded(child: _buildStatCard('Max', '26°C')),
+                Expanded(child: _buildStatCard('Max', '${data.history.isEmpty ? 0 : data.history.reduce((a, b) => a > b ? a : b).toStringAsFixed(1)}${data.unit}')),
                 const SizedBox(width: 16),
-                Expanded(child: _buildStatCard('Avg', '23.8°C', highlight: true)),
+                Expanded(child: _buildStatCard('Avg', '${data.history.isEmpty ? 0 : (data.history.reduce((a, b) => a + b) / data.history.length).toStringAsFixed(1)}${data.unit}', highlight: true)),
               ],
             ),
             
             const SizedBox(height: 32),
             
             // Threshold Settings
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.cardBackground,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.cardBorder),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.notifications_active, color: AppColors.accentCyan),
-                      const SizedBox(width: 12),
-                      Text('Threshold Settings', style: Theme.of(context).textTheme.titleLarge),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  _buildSliderRow('Max Alert Limit', _maxLimit, 0, 50, (val) {
-                    setState(() => _maxLimit = val);
-                  }),
-                  
-                  const SizedBox(height: 16),
-                  
-                  _buildSliderRow('Min Alert Limit', _minLimit, 0, 50, (val) {
-                    setState(() => _minLimit = val);
-                  }),
-                  
-                  const Divider(height: 32, color: AppColors.cardBorder),
-                  
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Smart Notifications', style: Theme.of(context).textTheme.titleMedium),
-                          const SizedBox(height: 4),
-                          Text('Alert if threshold is crossed', style: Theme.of(context).textTheme.bodySmall),
-                        ],
-                      ),
-                      Switch(
-                        value: _smartNotifications,
-                        onChanged: (val) {
-                          setState(() => _smartNotifications = val);
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            builder: (context) {
+              final thresholds = ref.watch(thresholdProvider);
+              final threshold = thresholds[widget.sensorType]!;
+              final unit = data.unit;
+
+              return Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.cardBackground,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.cardBorder),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.notifications_active, color: AppColors.accentCyan),
+                        const SizedBox(width: 12),
+                        Text('Threshold Settings', style: Theme.of(context).textTheme.titleLarge),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    if (widget.sensorType != SensorType.motion) ...[
+                      _buildSliderRow('Max Alert Limit', threshold.max ?? 100, 0, 100, unit, (val) {
+                        ref.read(thresholdProvider.notifier).updateThreshold(widget.sensorType, threshold.min, val);
+                      }),
+                      
+                      const SizedBox(height: 16),
+                      
+                      _buildSliderRow('Min Alert Limit', threshold.min ?? 0, 0, 100, unit, (val) {
+                        ref.read(thresholdProvider.notifier).updateThreshold(widget.sensorType, val, threshold.max);
+                      }),
+                    ] else
+                      const Text('Alerts are triggered on any motion detection.', style: TextStyle(color: AppColors.textSecondary)),
+                    
+                    const Divider(height: 32, color: AppColors.cardBorder),
+                    
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Smart Notifications', style: Theme.of(context).textTheme.titleMedium),
+                            const SizedBox(height: 4),
+                            Text('Alert if threshold is crossed', style: Theme.of(context).textTheme.bodySmall),
+                          ],
+                        ),
+                        Switch(
+                          value: threshold.isEnabled,
+                          onChanged: (val) {
+                            ref.read(thresholdProvider.notifier).toggleThreshold(widget.sensorType, val);
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
           ],
         ),
       ),
@@ -228,14 +237,14 @@ class _SensorDetailScreenState extends ConsumerState<SensorDetailScreen> {
     );
   }
 
-  Widget _buildSliderRow(String label, double value, double min, double max, ValueChanged<double> onChanged) {
+  Widget _buildSliderRow(String label, double value, double min, double max, String unit, ValueChanged<double> onChanged) {
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(label, style: Theme.of(context).textTheme.bodyMedium),
-            Text('${value.toInt()}°C', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.accentCyan)),
+            Text('${value.toInt()}$unit', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.accentCyan)),
           ],
         ),
         const SizedBox(height: 8),

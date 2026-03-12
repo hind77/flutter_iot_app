@@ -109,6 +109,17 @@ class MqttService {
     }
   }
 
+  void publish(String topic, String message) {
+    if (_client?.connectionStatus?.state == MqttConnectionState.connected) {
+      final builder = MqttClientPayloadBuilder();
+      builder.addString(message);
+      _client!.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
+      debugPrint('MQTT PUBLISH: $topic | $message');
+    } else {
+      debugPrint('MQTT WARN: Cannot publish, client not connected');
+    }
+  }
+
   void disconnect() {
     _client?.disconnect();
   }

@@ -1,74 +1,150 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/providers.dart';
+import '../../domain/entities/automation_rule.dart';
 
-class DevicesScreen extends StatelessWidget {
+class DevicesScreen extends ConsumerWidget {
   const DevicesScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Node Management'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(text: 'Devices'),
+              Tab(text: 'Automations'),
+            ],
+            indicatorColor: AppColors.accentCyan,
+            labelColor: AppColors.accentCyan,
+          ),
+        ),
+        body: TabBarView(
           children: [
-            _buildHeader(context),
-            _buildSearchBar(context),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                children: [
-                  _buildDeviceCard(
-                    context,
-                    title: 'Main Gateway',
-                    subtitle: 'Firmware: v2.3.1',
-                    icon: Icons.router_rounded,
-                    isOnline: true,
-                  ),
-                  _buildDeviceCard(
-                    context,
-                    title: 'Living Room Node',
-                    subtitle: 'Temp: 22°C | Humidity: 45%',
-                    icon: Icons.sensors_rounded,
-                    isOnline: true,
-                  ),
-                  _buildDeviceCard(
-                    context,
-                    title: 'Outdoor Camera',
-                    subtitle: 'Last Seen: 14 mins ago',
-                    icon: Icons.videocam_rounded,
-                    isOnline: false,
-                  ),
-                  _buildDeviceCard(
-                    context,
-                    title: 'Smart HVAC',
-                    subtitle: 'Current: 21°C | Mode: Auto',
-                    icon: Icons.air_rounded,
-                    isOnline: true,
-                  ),
-                ],
-              ),
-            ),
+            _buildDevicesTab(context),
+            _buildAutomationsTab(context, ref),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Devices',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.5,
-            ),
+  Widget _buildDevicesTab(BuildContext context) {
+    return Column(
+      children: [
+        _buildSearchBar(context),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            children: [
+              _buildDeviceCard(
+                context,
+                title: 'Main Gateway',
+                subtitle: 'Firmware: v2.3.1',
+                icon: Icons.router_rounded,
+                isOnline: true,
+              ),
+              _buildDeviceCard(
+                context,
+                title: 'Living Room Node',
+                subtitle: 'Temp: 22°C | Humidity: 45%',
+                icon: Icons.sensors_rounded,
+                isOnline: true,
+              ),
+              _buildDeviceCard(
+                context,
+                title: 'Outdoor Camera',
+                subtitle: 'Last Seen: 14 mins ago',
+                icon: Icons.videocam_rounded,
+                isOnline: false,
+              ),
+              _buildDeviceCard(
+                context,
+                title: 'Smart HVAC',
+                subtitle: 'Current: 21°C | Mode: Auto',
+                icon: Icons.air_rounded,
+                isOnline: true,
+              ),
+            ],
           ),
-          const CircleAvatar(
-            backgroundColor: AppColors.cardBackground,
-            child: Icon(Icons.add, color: AppColors.accentCyan),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAutomationsTab(BuildContext context, WidgetRef ref) {
+    final rules = ref.watch(automationProvider);
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Active Scenes', style: Theme.of(context).textTheme.titleLarge),
+              const Icon(Icons.add_circle_outline, color: AppColors.accentCyan),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            itemCount: rules.length,
+            itemBuilder: (context, index) {
+              final rule = rules[index];
+              return _buildAutomationCard(context, ref, rule);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAutomationCard(BuildContext context, WidgetRef ref, AutomationRule rule) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.accentCyan.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.auto_fix_high, color: AppColors.accentCyan),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(rule.name, style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'IF ${rule.triggerSensor.name} ${rule.triggerAbove ? ">" : "<"} ${rule.triggerValue} THEN ${rule.targetActuatorId} ON',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: rule.isEnabled,
+                onChanged: (val) => ref.read(automationProvider.notifier).toggleRule(rule.id),
+                activeColor: AppColors.accentCyan,
+              ),
+            ],
           ),
         ],
       ),
