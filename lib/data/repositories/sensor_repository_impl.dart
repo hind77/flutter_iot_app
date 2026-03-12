@@ -11,8 +11,8 @@ class SensorRepositoryImpl implements SensorRepository {
   Stream<Map<SensorType, SensorData>> get sensorDataStream => _mqttService.sensorDataStream;
 
   @override
-  Future<void> connect(String host, int port, String topic) async {
-    await _mqttService.connect(host, port, topic);
+  Future<bool> connect(String host, int port, String topic) async {
+    return await _mqttService.connect(host, port, topic);
   }
 
   @override

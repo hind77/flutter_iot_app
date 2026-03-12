@@ -15,19 +15,17 @@ class MqttService {
   Stream<Map<SensorType, SensorData>> get sensorDataStream => _sensorDataController.stream;
 
   Future<bool> connect(String host, int port, String topicPrefix) async {
-    _client = MqttServerClient(host, 'flutter_client_${DateTime.now().millisecondsSinceEpoch}');
-    _client!.port = port;
-    _client!.logging(on: false);
-    _client!.keepAlivePeriod = 20;
-
-    final connMess = MqttConnectMessage()
-        .startClean() // Non persistent session for simple example
-        .withWillQos(MqttQos.atLeastOnce);
+    final String clientIdentifier = 'cl_${DateTime.now().millisecondsSinceEpoch % 1000}';
+    _client = MqttServerClient.withPort(host, clientIdentifier, port);
     
-    _client!.connectionMessage = connMess;
+    _client!.logging(on: true);
+    _client!.keepAlivePeriod = 20;
+    _client!.connectTimeoutPeriod = 10000;
+    _client!.onDisconnected = () => debugPrint('MQTT: ON_DISCONNECTED CALLBACK');
+    _client!.onConnected = () => debugPrint('MQTT: ON_CONNECTED CALLBACK');
 
     try {
-      debugPrint('MQTT: Connecting to broker: $host, port: $port');
+      debugPrint('MQTT: Attempting connect to $host:$port...');
       await _client!.connect();
     } catch (e) {
       debugPrint('MQTT: Connection attempt failed: $e');

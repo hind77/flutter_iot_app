@@ -29,12 +29,15 @@ class MqttManager {
   Future<void> connectDefault() async {
     try {
       final prefs = await _ref.read(sharedPrefsProvider.future);
-      final host = prefs.getString('mqtt_host') ?? 'broker.emqx.io';
+      final host = prefs.getString('mqtt_host') ?? 'broker.hivemq.com';
       final port = int.tryParse(prefs.getString('mqtt_port') ?? '1883') ?? 1883;
-      final topic = prefs.getString('mqtt_topic') ?? 'flutter_iot_demo/sensors';
+      final topic = prefs.getString('mqtt_topic') ?? 'hind_iot_demo/001/sensors';
       
-      await _repo.connect(host, port, topic);
-      _ref.read(mqttConnectionStatusProvider.notifier).state = true;
+      final success = await _repo.connect(host, port, topic);
+      _ref.read(mqttConnectionStatusProvider.notifier).state = success;
+      if (!success) {
+        debugPrint('MQTT: Connection returned false (Check broker/network)');
+      }
     } catch (e) {
       debugPrint('MQTT Default Connect failed: $e');
     }

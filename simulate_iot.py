@@ -4,11 +4,12 @@ import random
 import paho.mqtt.client as mqtt
 
 # Configuration
-BROKER = "broker.emqx.io"
+BROKER = "broker.hivemq.com"
 PORT = 1883
-TOPIC_PREFIX = "flutter_iot_demo/sensors"
+TOPIC_PREFIX = "hind_iot_demo/001/sensors" # Changed to unique topic
 
 client = mqtt.Client()
+client.loop_start() # Start loop in background
 
 def simulate_sensors():
     print(f"Connecting to {BROKER}...")
