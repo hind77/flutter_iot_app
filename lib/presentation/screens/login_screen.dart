@@ -42,7 +42,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             const Icon(Icons.hub_rounded, size: 64, color: AppColors.accentCyan),
             const SizedBox(height: 32),
             Text(
-              'Welcome to\nHind IoT',
+              'Welcome to\nSmart Home OS',
               style: Theme.of(context).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
