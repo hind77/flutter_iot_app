@@ -4,59 +4,114 @@ import 'app_colors.dart';
 
 class AppTheme {
   static ThemeData get darkTheme {
+    return _buildTheme(Brightness.dark);
+  }
+
+  static ThemeData get lightTheme {
+    return _buildTheme(Brightness.light);
+  }
+
+  static ThemeData _buildTheme(Brightness brightness) {
+    final bool isDark = brightness == Brightness.dark;
+    
     return ThemeData(
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: AppColors.background,
+      brightness: brightness,
+      scaffoldBackgroundColor: isDark ? AppColors.background : AppColors.lightBackground,
       primaryColor: AppColors.accentCyan,
-      colorScheme: const ColorScheme.dark(
-        primary: AppColors.accentCyan,
-        secondary: AppColors.accentCyan,
-        background: AppColors.background,
-        surface: AppColors.cardBackground,
-        error: AppColors.criticalRed,
-      ),
-      textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).copyWith(
-        displayLarge: GoogleFonts.inter(fontSize: 48, fontWeight: FontWeight.bold, color: AppColors.accentCyan),
-        displayMedium: GoogleFonts.inter(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
-        headlineLarge: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w600, color: Colors.white),
-        headlineMedium: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white),
-        titleLarge: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white),
-        titleMedium: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
-        bodyLarge: GoogleFonts.inter(fontSize: 16, color: Colors.white),
-        bodyMedium: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
-        bodySmall: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+      colorScheme: isDark 
+        ? const ColorScheme.dark(
+            primary: AppColors.accentCyan,
+            secondary: AppColors.accentCyan,
+            background: AppColors.background,
+            surface: AppColors.cardBackground,
+            error: AppColors.criticalRed,
+          )
+        : const ColorScheme.light(
+            primary: AppColors.accentCyan,
+            secondary: AppColors.accentCyan,
+            background: AppColors.lightBackground,
+            surface: AppColors.lightCardBackground,
+            error: AppColors.criticalRed,
+          ),
+      textTheme: GoogleFonts.interTextTheme(
+        isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme
+      ).copyWith(
+        displayLarge: GoogleFonts.inter(
+          fontSize: 48, 
+          fontWeight: FontWeight.bold, 
+          color: AppColors.accentCyan
+        ),
+        displayMedium: GoogleFonts.inter(
+          fontSize: 32, 
+          fontWeight: FontWeight.bold, 
+          color: isDark ? Colors.white : AppColors.textPrimaryLight
+        ),
+        headlineLarge: GoogleFonts.inter(
+          fontSize: 24, 
+          fontWeight: FontWeight.w600, 
+          color: isDark ? Colors.white : AppColors.textPrimaryLight
+        ),
+        headlineMedium: GoogleFonts.inter(
+          fontSize: 20, 
+          fontWeight: FontWeight.w600, 
+          color: isDark ? Colors.white : AppColors.textPrimaryLight
+        ),
+        titleLarge: GoogleFonts.inter(
+          fontSize: 18, 
+          fontWeight: FontWeight.w600, 
+          color: isDark ? Colors.white : AppColors.textPrimaryLight
+        ),
+        titleMedium: GoogleFonts.inter(
+          fontSize: 16, 
+          fontWeight: FontWeight.w500, 
+          color: isDark ? Colors.white : AppColors.textPrimaryLight
+        ),
+        bodyLarge: GoogleFonts.inter(
+          fontSize: 16, 
+          color: isDark ? Colors.white : AppColors.textPrimaryLight
+        ),
+        bodyMedium: GoogleFonts.inter(
+          fontSize: 14, 
+          color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight
+        ),
+        bodySmall: GoogleFonts.inter(
+          fontSize: 12, 
+          color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight
+        ),
       ),
       cardTheme: CardTheme(
-        color: AppColors.cardBackground,
+        color: isDark ? AppColors.cardBackground : AppColors.lightCardBackground,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.cardBorder, width: 1),
+          side: BorderSide(
+            color: isDark ? AppColors.cardBorder : AppColors.lightCardBorder, 
+            width: 1
+          ),
         ),
-        elevation: 0,
+        elevation: isDark ? 0 : 2,
         margin: EdgeInsets.zero,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.background,
+        backgroundColor: isDark ? AppColors.background : AppColors.lightBackground,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white),
-        iconTheme: const IconThemeData(color: Colors.white),
+        titleTextStyle: GoogleFonts.inter(
+          fontSize: 18, 
+          fontWeight: FontWeight.w600, 
+          color: isDark ? Colors.white : AppColors.textPrimaryLight
+        ),
+        iconTheme: IconThemeData(color: isDark ? Colors.white : AppColors.textPrimaryLight),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: AppColors.background,
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: isDark ? AppColors.background : AppColors.lightBackground,
         selectedItemColor: AppColors.accentCyan,
         unselectedItemColor: AppColors.systemGray,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
       switchTheme: SwitchThemeData(
-        thumbColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
-          if (states.contains(MaterialState.selected)) {
-            return Colors.white;
-          }
-          return Colors.white;
-        }),
-        trackColor: MaterialStateProperty.resolveWith<Color>((Set<MaterialState> states) {
+        thumbColor: MaterialStateProperty.all(Colors.white),
+        trackColor: MaterialStateProperty.resolveWith<Color>((states) {
           if (states.contains(MaterialState.selected)) {
             return AppColors.accentCyan;
           }

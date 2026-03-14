@@ -3,6 +3,7 @@ import '../../core/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/providers.dart';
 import '../../domain/entities/automation_rule.dart';
+import '../widgets/floor_plan_view.dart';
 
 class DevicesScreen extends ConsumerWidget {
   const DevicesScreen({super.key});
@@ -10,12 +11,13 @@ class DevicesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Node Management'),
+          title: const Text('Home Controller'),
           bottom: const TabBar(
             tabs: [
+              Tab(text: 'Floor Plan'),
               Tab(text: 'Devices'),
               Tab(text: 'Automations'),
             ],
@@ -25,6 +27,7 @@ class DevicesScreen extends ConsumerWidget {
         ),
         body: TabBarView(
           children: [
+            const FloorPlanView(),
             _buildDevicesTab(context),
             _buildAutomationsTab(context, ref),
           ],

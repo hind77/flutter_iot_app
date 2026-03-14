@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import '../../data/services/sqlite_helper.dart';
 import '../../data/services/mqtt_service.dart';
+import '../../data/services/notification_service.dart';
 import '../../data/repositories/alert_repository_impl.dart';
 import '../../data/repositories/sensor_repository_impl.dart';
 import '../../domain/entities/sensor_data.dart';
@@ -11,6 +12,36 @@ import '../../domain/entities/threshold_entity.dart';
 import '../../domain/entities/automation_rule.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
+import 'package:flutter/material.dart';
+
+// Theme State
+final themeProvider = StateNotifierProvider<ThemeNotifier, ThemeMode>((ref) {
+  return ThemeNotifier(ref);
+});
+
+class ThemeNotifier extends StateNotifier<ThemeMode> {
+  final Ref _ref;
+  ThemeNotifier(this._ref) : super(ThemeMode.dark) {
+    _loadTheme();
+  }
+
+  Future<void> _loadTheme() async {
+    final prefs = await _ref.read(sharedPrefsProvider.future);
+    final isLight = prefs.getBool('is_light_mode') ?? false;
+    state = isLight ? ThemeMode.light : ThemeMode.dark;
+  }
+
+  Future<void> toggleTheme() async {
+    final prefs = await _ref.read(sharedPrefsProvider.future);
+    if (state == ThemeMode.dark) {
+      state = ThemeMode.light;
+      await prefs.setBool('is_light_mode', true);
+    } else {
+      state = ThemeMode.dark;
+      await prefs.setBool('is_light_mode', false);
+    }
+  }
+}
 
 // Services
 final sqliteHelperProvider = Provider<SqliteHelper>((ref) => SqliteHelper());
@@ -220,6 +251,9 @@ class AlertNotifier extends StateNotifier<AsyncValue<List<AlertEntity>>> {
 
     await _repository.saveAlert(newAlert);
     await loadAlerts();
+    
+    // Trigger real local push notification
+    NotificationService.triggerAlert(title, desc);
     
     debugPrint("🔥 SMART ALERT TRIGGERED: $title - $desc");
   }

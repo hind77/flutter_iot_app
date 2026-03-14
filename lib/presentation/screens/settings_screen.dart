@@ -116,6 +116,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             const SizedBox(height: 16),
             _buildPreferenceCard(
+              title: 'Light Mode Rendering',
+              subtitle: 'Switch between dark and light themes',
+              value: ref.watch(themeProvider) == ThemeMode.light,
+              onChanged: (val) => ref.read(themeProvider.notifier).toggleTheme(),
+            ),
+            const SizedBox(height: 12),
+            _buildPreferenceCard(
               title: 'Push Notifications',
               subtitle: 'Instant alerts on your device',
               value: _pushEnabled,

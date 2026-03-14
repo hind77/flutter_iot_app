@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'core/theme/app_theme.dart';
+import 'data/services/notification_service.dart';
 import 'presentation/screens/main_screen.dart';
 import 'presentation/screens/login_screen.dart';
 import 'presentation/providers/providers.dart';
@@ -15,6 +16,8 @@ void main() async {
     if (!kIsWeb) {
       await Firebase.initializeApp();
       debugPrint('Firebase initialized successfully');
+      // Initialize notification service
+      await NotificationService.initialize();
     }
   } catch (e) {
     debugPrint('Firebase init failed - google-services.json or configurations might be missing');
@@ -33,10 +36,13 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider);
+    final themeMode = ref.watch(themeProvider);
 
     return MaterialApp(
       title: 'Flutter IoT App',
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
       home: user == null ? const LoginScreen() : const MainScreen(),
       debugShowCheckedModeBanner: false,
     );
