@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../domain/entities/sensor_data.dart';
 import '../providers/providers.dart';
+import '../providers/weather_provider.dart';
 import '../widgets/sensor_card.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -52,14 +53,44 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBackground,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.cardBorder),
-                  ),
-                  child: const Icon(Icons.notifications_none_rounded, color: Colors.white),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.logout_rounded, color: AppColors.criticalRed),
+                      tooltip: 'Logout (Deconnexion)',
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            backgroundColor: AppColors.cardBackground,
+                            title: const Text('Logout'),
+                            content: const Text('Are you sure you want to disconnect from the application?'),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true), 
+                                child: const Text('Logout', style: TextStyle(color: AppColors.criticalRed))
+                              ),
+                            ],
+                          ),
+                        );
+                        
+                        if (confirm == true) {
+                          ref.read(authProvider.notifier).logout();
+                        }
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardBackground,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.cardBorder),
+                      ),
+                      child: const Icon(Icons.notifications_none_rounded, color: Colors.white),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -131,6 +162,69 @@ class DashboardScreen extends ConsumerWidget {
             ),
             
             const SizedBox(height: 32),
+
+            // Contextual Weather Overlay
+            ref.watch(weatherProvider).when(
+              data: (weather) {
+                final indoorTemp = sensorData[SensorType.temperature]?.value ?? 22.0;
+                final difference = weather.temperature - indoorTemp;
+                
+                String message;
+                if (difference > 5) {
+                  message = "It's ${weather.temperature}°C outside, but your Kitchen is ${indoorTemp}°C. Good job keeping it cool!";
+                } else if (indoorTemp > weather.temperature) {
+                  message = "It's cooler outside (${weather.temperature}°C). You might want to open a window!";
+                } else {
+                  message = "Outside temp is ${weather.temperature}°C. Weather is matching indoors.";
+                }
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 32),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.accentCyan.withOpacity(0.2),
+                        AppColors.cardBackground,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.cardBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(weather.icon, style: const TextStyle(fontSize: 40)),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Weather Context',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: AppColors.accentCyan,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              message,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => const SizedBox.shrink(),
+            ),
             
             // Live Sensors Header
             Row(

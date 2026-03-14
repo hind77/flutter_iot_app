@@ -21,4 +21,8 @@ class AppColors {
   // Chart Colors
   static const Color chartLine = Color(0xFF00D4FF);
   static const Color chartFill = Color(0x3300D4FF);
+  
+  // Glassmorphism
+  static const Color glassWhite = Color(0x1AFFFFFF);
+  static const Color glassBorder = Color(0x33FFFFFF);
 }

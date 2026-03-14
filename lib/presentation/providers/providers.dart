@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 import '../../data/services/sqlite_helper.dart';
 import '../../data/services/mqtt_service.dart';
 import '../../data/repositories/alert_repository_impl.dart';
@@ -54,6 +55,15 @@ class MqttManager {
       _ref.read(mqttConnectionStatusProvider.notifier).state = true;
     } catch (e) {
       debugPrint('MQTT Custom Connect failed: $e');
+    }
+  }
+
+  Future<void> disconnect() async {
+    try {
+      await _repo.disconnect();
+      _ref.read(mqttConnectionStatusProvider.notifier).state = false;
+    } catch (e) {
+      debugPrint('MQTT Disconnect failed: $e');
     }
   }
 }

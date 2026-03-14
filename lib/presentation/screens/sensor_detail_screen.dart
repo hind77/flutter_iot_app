@@ -4,6 +4,9 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../core/theme/app_colors.dart';
 import '../../domain/entities/sensor_data.dart';
 import '../providers/providers.dart';
+import 'dart:io';
+import 'package:csv/csv.dart';
+import 'package:path_provider/path_provider.dart';
 
 class SensorDetailScreen extends ConsumerStatefulWidget {
   final SensorType sensorType;
@@ -45,6 +48,11 @@ class _SensorDetailScreenState extends ConsumerState<SensorDetailScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.download),
+            tooltip: 'Generate CSV Report',
+            onPressed: () => _generateCsvReport(data),
+          ),
           IconButton(
             icon: const Icon(Icons.more_vert),
             onPressed: () {},
@@ -362,5 +370,54 @@ class _SensorDetailScreenState extends ConsumerState<SensorDetailScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _generateCsvReport(SensorData data) async {
+    try {
+      List<List<dynamic>> rows = [];
+      rows.add(["Timestamp", "Value", "Unit", "Status"]);
+      
+      final now = DateTime.now();
+      for (int i = 0; i < data.history.length; i++) {
+        final time = now.subtract(Duration(hours: data.history.length - i));
+        rows.add([
+          time.toIso8601String(),
+          data.history[i],
+          data.unit,
+          data.status.name,
+        ]);
+      }
+      
+      String csv = const ListToCsvConverter().convert(rows);
+      
+      final directory = await getApplicationDocumentsDirectory();
+      final path = "${directory.path}/report_${widget.sensorType.name}_${now.millisecondsSinceEpoch}.csv";
+      final file = File(path);
+      await file.writeAsString(csv);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Report saved: $path'),
+            backgroundColor: AppColors.healthyGreen,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.black,
+              onPressed: () {},
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error generating report: $e'),
+            backgroundColor: AppColors.criticalRed,
+          ),
+        );
+      }
+    }
   }
 }

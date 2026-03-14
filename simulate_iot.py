@@ -18,7 +18,18 @@ def on_connect(client, userdata, flags, rc):
     print(f"Subscribed to commands: {cmd_topic}")
 
 def on_message(client, userdata, msg):
-    print(f"ACTUATOR ACTION: {msg.topic} -> {msg.payload.decode()}")
+    payload = msg.payload.decode()
+    topic = msg.topic
+    print(f"ACTUATOR COMMAND RECEIVED: {topic} -> {payload}")
+    
+    # Extract actuator ID from topic: hind_iot_demo/001/commands/ACTUATOR_ID
+    # We can use this to adjust simulation base values later if needed
+    if "kitchen_fan" in topic:
+        print(f"FAN STATUS UPDATED: {payload}")
+    elif "living_room_light" in topic:
+        print(f"LIGHT STATUS UPDATED: {payload}")
+    elif "ac_unit" in topic:
+        print(f"AC UNIT STATUS UPDATED: {payload}")
 
 client.on_connect = on_connect
 client.on_message = on_message
