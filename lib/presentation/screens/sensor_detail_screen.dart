@@ -108,9 +108,9 @@ class _SensorDetailScreenState extends ConsumerState<SensorDetailScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.cardBackground,
+                color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.cardBorder),
+                border: Border.all(color: Theme.of(context).dividerColor),
               ),
               child: Column(
                 children: [
@@ -162,9 +162,9 @@ class _SensorDetailScreenState extends ConsumerState<SensorDetailScreen> {
                 return Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.cardBackground,
+                    color: Theme.of(context).cardTheme.color,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.cardBorder),
+                    border: Border.all(color: Theme.of(context).dividerColor),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,7 +209,7 @@ class _SensorDetailScreenState extends ConsumerState<SensorDetailScreen> {
                       ] else
                         const Text('Alerts are triggered on any motion detection.', style: TextStyle(color: AppColors.textSecondary)),
                       
-                      const Divider(height: 32, color: AppColors.cardBorder),
+                      Divider(height: 32, color: Theme.of(context).dividerColor),
                       
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -245,9 +245,9 @@ class _SensorDetailScreenState extends ConsumerState<SensorDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,7 +257,7 @@ class _SensorDetailScreenState extends ConsumerState<SensorDetailScreen> {
           Text(
             value,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: highlight ? AppColors.accentCyan : Colors.white,
+              color: highlight ? AppColors.accentCyan : Theme.of(context).textTheme.titleLarge?.color,
             ),
           ),
         ],

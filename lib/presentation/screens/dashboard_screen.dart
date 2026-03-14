@@ -12,6 +12,7 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sensorData = ref.watch(liveSensorProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: SafeArea(
@@ -27,7 +28,7 @@ class DashboardScreen extends ConsumerWidget {
                     const CircleAvatar(
                       radius: 20,
                       backgroundColor: AppColors.accentCyan,
-                      child: Icon(Icons.person, color: AppColors.background),
+                      child: Icon(Icons.person, color: isDark ? AppColors.background : Colors.white),
                     ),
                     const SizedBox(width: 12),
                     Column(
@@ -62,7 +63,7 @@ class DashboardScreen extends ConsumerWidget {
                         final confirm = await showDialog<bool>(
                           context: context,
                           builder: (context) => AlertDialog(
-                            backgroundColor: AppColors.cardBackground,
+                            backgroundColor: Theme.of(context).cardTheme.color,
                             title: const Text('Logout'),
                             content: const Text('Are you sure you want to disconnect from the application?'),
                             actions: [
@@ -86,9 +87,12 @@ class DashboardScreen extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: AppColors.cardBackground,
                         shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.cardBorder),
+                        border: Border.all(color: Theme.of(context).dividerColor),
                       ),
-                      child: const Icon(Icons.notifications_none_rounded, color: Colors.white),
+                      child: Icon(
+                        Icons.notifications_none_rounded, 
+                        color: Theme.of(context).iconTheme.color,
+                      ),
                     ),
                   ],
                 ),
@@ -100,7 +104,7 @@ class DashboardScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.cardBackground,
+                color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: AppColors.accentCyan.withOpacity(0.3)),
               ),
@@ -185,13 +189,13 @@ class DashboardScreen extends ConsumerWidget {
                     gradient: LinearGradient(
                       colors: [
                         AppColors.accentCyan.withOpacity(0.2),
-                        AppColors.cardBackground,
+                        Theme.of(context).cardTheme.color!,
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.cardBorder),
+                    border: Border.all(color: Theme.of(context).dividerColor),
                   ),
                   child: Row(
                     children: [
@@ -298,9 +302,9 @@ class DashboardScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             Container(
               decoration: BoxDecoration(
-                color: AppColors.cardBackground,
+                color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.cardBorder),
+                border: Border.all(color: Theme.of(context).dividerColor),
               ),
               child: Column(
                 children: [
@@ -310,7 +314,7 @@ class DashboardScreen extends ConsumerWidget {
                     subtitle: '12 mins ago • Alex',
                     color: AppColors.accentCyan,
                   ),
-                  Divider(color: AppColors.cardBorder, height: 1),
+                  Divider(color: Theme.of(context).dividerColor, height: 1),
                   _buildActivityItem(
                     context,
                     title: 'Living Room Light Off',
@@ -350,9 +354,9 @@ class DashboardScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.background.withOpacity(0.5),
+        color: Theme.of(context).scaffoldBackgroundColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         children: [
@@ -373,9 +377,9 @@ class DashboardScreen extends ConsumerWidget {
         width: 100,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: status ? AppColors.accentCyan : AppColors.cardBackground,
+          color: status ? AppColors.accentCyan : Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.cardBorder),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -389,7 +393,7 @@ class DashboardScreen extends ConsumerWidget {
             Text(
               label, 
               style: TextStyle(
-                color: status ? AppColors.background : Colors.white,
+                color: status ? (isDark ? AppColors.background : Colors.white) : Theme.of(context).textTheme.bodySmall?.color,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),

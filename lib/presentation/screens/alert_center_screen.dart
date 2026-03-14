@@ -90,7 +90,7 @@ class AlertCenterScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.criticalRed.withOpacity(0.5)),
       ),
@@ -105,7 +105,7 @@ class AlertCenterScreen extends ConsumerWidget {
                   color: AppColors.criticalRed,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.error_outline_rounded, color: Colors.white, size: 28),
+                child: Icon(Icons.error_outline_rounded, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.white, size: 28),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -209,9 +209,9 @@ class AlertCenterScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -290,8 +290,8 @@ class AlertCenterScreen extends ConsumerWidget {
                   child: ElevatedButton(
                     onPressed: () => ref.read(alertProvider.notifier).resolveAlert(alert.id),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.cardBorder,
-                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).dividerColor,
+                      foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -309,8 +309,8 @@ class AlertCenterScreen extends ConsumerWidget {
                 child: ElevatedButton(
                   onPressed: () => ref.read(alertProvider.notifier).dismissAlert(alert.id),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.cardBorder,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).dividerColor,
+                    foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -331,15 +331,15 @@ class AlertCenterScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.cardBackground,
-        title: Text('Resolve ${alert.title}', style: const TextStyle(color: Colors.white)),
+        backgroundColor: Theme.of(context).cardTheme.color,
+        title: Text('Resolve ${alert.title}', style: TextStyle(color: Theme.of(context).textTheme.titleLarge?.color)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(alert.description, style: const TextStyle(color: AppColors.textSecondary)),
             const SizedBox(height: 24),
-            const Text('Suggested Action:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+            Text('Suggested Action:', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.titleMedium?.color)),
             const SizedBox(height: 12),
             if (alert.sensorType == SensorType.temperature) 
               _buildActionTile(context, ref, 'Turn on cooling system', Icons.ac_unit, 'ac_unit'),
@@ -381,7 +381,7 @@ class AlertCenterScreen extends ConsumerWidget {
     final status = ref.watch(actuatorProvider)[actuatorId] ?? false;
     return ListTile(
       leading: Icon(icon, color: AppColors.accentCyan),
-      title: Text(label, style: const TextStyle(color: Colors.white, fontSize: 14)),
+      title: Text(label, style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 14)),
       trailing: Switch(
         value: status,
         onChanged: (val) => ref.read(actuatorProvider.notifier).toggle(actuatorId),

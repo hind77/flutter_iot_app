@@ -51,7 +51,7 @@ class FloorPlanView extends ConsumerWidget {
                         decoration: BoxDecoration(
                           color: isDark ? AppColors.cardBackground : Colors.white,
                           borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: AppColors.cardBorder, width: 2),
+                          border: Border.all(color: theme.dividerColor, width: 2),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.1),
@@ -68,6 +68,7 @@ class FloorPlanView extends ConsumerWidget {
                     
                     // Interactive Sensor Nodes
                     _buildSensorNode(
+                      context,
                       constraints, 
                       top: 0.25, left: 0.25, 
                       type: SensorType.temperature, 
@@ -75,6 +76,7 @@ class FloorPlanView extends ConsumerWidget {
                       data: sensors[SensorType.temperature],
                     ),
                     _buildSensorNode(
+                      context,
                       constraints, 
                       top: 0.6, left: 0.3, 
                       type: SensorType.motion, 
@@ -82,6 +84,7 @@ class FloorPlanView extends ConsumerWidget {
                       data: sensors[SensorType.motion],
                     ),
                     _buildSensorNode(
+                      context,
                       constraints, 
                       top: 0.3, left: 0.7, 
                       type: SensorType.humidity, 
@@ -89,6 +92,7 @@ class FloorPlanView extends ConsumerWidget {
                       data: sensors[SensorType.humidity],
                     ),
                     _buildSensorNode(
+                      context,
                       constraints, 
                       top: 0.7, left: 0.7, 
                       type: SensorType.pressure, 
@@ -111,6 +115,7 @@ class FloorPlanView extends ConsumerWidget {
   }
 
   Widget _buildSensorNode(
+    BuildContext context,
     BoxConstraints constraints, {
     required double top,
     required double left,
@@ -132,7 +137,7 @@ class FloorPlanView extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.background,
+              color: Theme.of(context).cardTheme.color,
               shape: BoxShape.circle,
               border: Border.all(color: statusColor, width: 2),
               boxShadow: [
@@ -149,13 +154,17 @@ class FloorPlanView extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: AppColors.background.withOpacity(0.8),
+              color: Theme.of(context).cardTheme.color?.withOpacity(0.9),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
               '$label\n${data?.value ?? "--"}${data?.unit ?? ""}',
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white),
+              style: TextStyle(
+                fontSize: 9, 
+                fontWeight: FontWeight.bold, 
+                color: Theme.of(context).textTheme.bodySmall?.color
+              ),
             ),
           ),
         ],

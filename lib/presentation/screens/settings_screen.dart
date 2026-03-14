@@ -103,7 +103,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             
             const SizedBox(height: 32),
-            const Divider(color: AppColors.cardBorder),
+            Divider(color: Theme.of(context).dividerColor),
             const SizedBox(height: 32),
             
             // Notifications Section
@@ -144,7 +144,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             
             const SizedBox(height: 32),
-            const Divider(color: AppColors.cardBorder),
+            Divider(color: Theme.of(context).dividerColor),
             const SizedBox(height: 32),
 
             // Smart Thresholds Section
@@ -166,7 +166,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             }),
             
             const SizedBox(height: 32),
-            const Divider(color: AppColors.cardBorder),
+            Divider(color: Theme.of(context).dividerColor),
             const SizedBox(height: 32),
             
             // Devices Section
@@ -260,13 +260,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         const SizedBox(height: 8),
         TextField(
           controller: controller,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
           decoration: InputDecoration(
-            fillColor: AppColors.cardBackground,
+            fillColor: Theme.of(context).cardTheme.color,
             filled: true,
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.cardBorder),
+              borderSide: BorderSide(color: Theme.of(context).dividerColor),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -287,9 +287,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: SwitchListTile(
         title: Text(title, style: Theme.of(context).textTheme.titleMedium),
@@ -320,9 +320,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         children: [
@@ -383,14 +383,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           height: 40,
           child: TextField(
             keyboardType: TextInputType.number,
-            style: const TextStyle(fontSize: 14, color: Colors.white),
+            style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyLarge?.color),
             decoration: InputDecoration(
               isDense: true,
               hintText: value,
               hintStyle: const TextStyle(color: AppColors.textSecondary),
-              fillColor: AppColors.background,
+              fillColor: Theme.of(context).scaffoldBackgroundColor,
               filled: true,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Theme.of(context).dividerColor)),
               contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             ),
             onSubmitted: onSave,
@@ -404,17 +404,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
-              color: AppColors.background,
-              borderRadius: BorderRadius.all(Radius.circular(12)),
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              borderRadius: const BorderRadius.all(Radius.circular(12)),
             ),
             child: Icon(icon, color: AppColors.accentCyan),
           ),

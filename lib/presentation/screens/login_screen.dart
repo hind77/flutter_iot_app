@@ -84,9 +84,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         TextField(
           controller: controller,
           obscureText: isPassword,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
           decoration: InputDecoration(
-            fillColor: AppColors.cardBackground,
+            fillColor: Theme.of(context).cardTheme.color,
             filled: true,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),

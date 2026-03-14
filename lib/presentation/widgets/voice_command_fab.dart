@@ -44,7 +44,7 @@ class _VoiceCommandFabState extends ConsumerState<VoiceCommandFab> {
     if (mounted) {
       showModalBottomSheet(
         context: context,
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: Theme.of(context).cardTheme.color,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),

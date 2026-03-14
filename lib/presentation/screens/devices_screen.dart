@@ -113,9 +113,9 @@ class DevicesScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         children: [
@@ -160,9 +160,9 @@ class DevicesScreen extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.cardBorder),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: TextField(
           decoration: InputDecoration(
@@ -187,18 +187,18 @@ class DevicesScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.background,
+              color: Theme.of(context).scaffoldBackgroundColor,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.cardBorder),
+              border: Border.all(color: Theme.of(context).dividerColor),
             ),
             child: Icon(icon, color: isOnline ? AppColors.accentCyan : AppColors.textSecondary),
           ),

@@ -70,9 +70,9 @@ class SensorCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.cardBackground,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.cardBorder),
+          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,7 +83,7 @@ class SensorCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.cardBorder,
+                    color: Theme.of(context).dividerColor.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
