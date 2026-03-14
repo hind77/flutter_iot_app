@@ -206,13 +206,15 @@ class AlertNotifier extends StateNotifier<AsyncValue<List<AlertEntity>>> {
       String message = "";
       AlertSeverity severity = AlertSeverity.warning;
 
+      final displayValue = sensorData.value.toStringAsFixed(1);
+      
       if (threshold.max != null && sensorData.value > threshold.max!) {
         isViolated = true;
-        message = "${sensorData.type.name.toUpperCase()} exceeded ${threshold.max}${sensorData.unit}";
+        message = "${sensorData.type.name.toUpperCase()} exceeded ${threshold.max}${sensorData.unit} (Current: $displayValue${sensorData.unit})";
         severity = AlertSeverity.critical;
       } else if (threshold.min != null && sensorData.value < threshold.min!) {
         isViolated = true;
-        message = "${sensorData.type.name.toUpperCase()} dropped below ${threshold.min}${sensorData.unit}";
+        message = "${sensorData.type.name.toUpperCase()} dropped below ${threshold.min}${sensorData.unit} (Current: $displayValue${sensorData.unit})";
         severity = AlertSeverity.warning;
       }
 
@@ -233,12 +235,12 @@ class AlertNotifier extends StateNotifier<AsyncValue<List<AlertEntity>>> {
     required AlertSeverity severity,
     required SensorType sensorType,
   }) async {
-    // Basic cooldown to prevent alert spam (1 alert per sensor every 30 seconds)
+    // Smarter cooldown: 1 alert per sensor every 5 minutes (to avoid 37+ alerts)
     final cooldownKey = "${sensorType.name}_${severity.name}";
     if (_recentAlertCooldown.contains(cooldownKey)) return;
     
     _recentAlertCooldown.add(cooldownKey);
-    Timer(const Duration(seconds: 30), () => _recentAlertCooldown.remove(cooldownKey));
+    Timer(const Duration(minutes: 5), () => _recentAlertCooldown.remove(cooldownKey));
 
     final newAlert = AlertEntity(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -464,6 +466,26 @@ class AutomationNotifier extends StateNotifier<List<AutomationRule>> {
       triggerAbove: true,
       targetActuatorId: 'living_room_light',
       actionOn: true,
+    ),
+    AutomationRule(
+      id: '3',
+      name: 'Dehumidifier Control',
+      triggerSensor: SensorType.humidity,
+      triggerValue: 65.0,
+      triggerAbove: true,
+      targetActuatorId: 'kitchen_fan',
+      actionOn: true,
+      isEnabled: false,
+    ),
+    AutomationRule(
+      id: '4',
+      name: 'Energy Savings Mode',
+      triggerSensor: SensorType.pressure,
+      triggerValue: 1020.0,
+      triggerAbove: true,
+      targetActuatorId: 'ac_unit',
+      actionOn: false,
+      isEnabled: false,
     ),
   ]);
 

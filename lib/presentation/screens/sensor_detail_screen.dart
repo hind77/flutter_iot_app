@@ -18,9 +18,6 @@ class SensorDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _SensorDetailScreenState extends ConsumerState<SensorDetailScreen> {
-  double _maxLimit = 28.0;
-  double _minLimit = 18.0;
-  bool _smartNotifications = true;
 
   String _getTitle() {
     switch (widget.sensorType) {
@@ -79,28 +76,42 @@ class _SensorDetailScreenState extends ConsumerState<SensorDetailScreen> {
             const SizedBox(height: 16),
             
             // Status Chip
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.healthyGreen.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.healthyGreen.withOpacity(0.3)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.check_circle, color: AppColors.healthyGreen, size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Status: ${data.status.name.toUpperCase()}',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: data.status == SensorStatus.critical ? AppColors.criticalRed : AppColors.healthyGreen,
-                      fontWeight: FontWeight.bold,
+            () {
+              final statusColor = data.status == SensorStatus.critical 
+                  ? AppColors.criticalRed 
+                  : data.status == SensorStatus.warning 
+                      ? AppColors.warningOrange 
+                      : AppColors.healthyGreen;
+              
+              final statusIcon = data.status == SensorStatus.normal 
+                  ? Icons.check_circle_rounded 
+                  : data.status == SensorStatus.warning 
+                      ? Icons.warning_rounded 
+                      : Icons.error_rounded;
+
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: statusColor.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(statusIcon, color: statusColor, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Status: ${data.status.name.toUpperCase()}',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: statusColor,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
+                  ],
+                ),
+              );
+            }(),
             
             const SizedBox(height: 32),
             

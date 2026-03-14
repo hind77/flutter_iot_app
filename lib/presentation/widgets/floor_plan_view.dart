@@ -158,7 +158,7 @@ class FloorPlanView extends ConsumerWidget {
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
-              '$label\n${data?.value ?? "--"}${data?.unit ?? ""}',
+              '$label\n${type == SensorType.motion ? (data?.value == 1.0 ? "Detected" : "No Motion") : "${data?.value ?? '--'}${data?.unit ?? ''}"}',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 9, 
